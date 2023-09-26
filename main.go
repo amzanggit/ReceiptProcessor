@@ -37,6 +37,20 @@ func ProcessReceipt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate the date
+	_, errDate := time.Parse("2006-01-02", receipt.PurchaseDate)
+	if errDate != nil {
+		http.Error(w, "Invalid date", http.StatusBadRequest)
+		return
+	}
+
+	// Validate the time
+	_, errTime := time.Parse("15:04", receipt.PurchaseTime)
+	if errTime != nil {
+		http.Error(w, "Invalid time", http.StatusBadRequest)
+		return
+	}
+
 	// generate unique ID for receipt
 	receiptID := uuid.New().String()
 
