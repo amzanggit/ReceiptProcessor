@@ -1,6 +1,9 @@
-package ReceiptProcessor
+package main
 
 import (
+	"encoding/json"
+	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -67,6 +70,27 @@ func TestProcessReceiptsAndRetrievePoints(t *testing.T) {
 			receiptJSON: `{
 			  	"retailer": "Target",
 			  	"purchaseDate": "2022-01-01",
+			  	"purchaseTime": "16:00",
+			  	"items": [
+			    	{
+			      		"shortDescription": "Mountain Dew 12PK  ",
+			      		"price": "6.49"
+			    	},{
+			      		"shortDescription": " Emils Cheese Pizza ",
+			      		"price": "122.25"
+			    	},{
+			      		"shortDescription": "   Knorr Creamy Chicken ",
+			      		"price": "1.26"
+			    	}
+			  	],
+			  	"total": "35.35"
+			}`,
+			expectedPoints: 52,
+		}, {
+			name: "Test special time",
+			receiptJSON: `{
+			  	"retailer": "Target",
+			  	"purchaseDate": "2022-01-01",
 			  	"purchaseTime": "14:00",
 			  	"items": [
 			    	{
@@ -103,13 +127,12 @@ func TestProcessReceiptsAndRetrievePoints(t *testing.T) {
 			  	],
 			  	"total": "20.00"
 			}`,
-			// expectedPoints: 89,
-			wantStatus: 
+			wantStatus: http.StatusBadRequest,
 		}, {
-			name: "Test invaild date/time 2",
+			name: "Test invaild time",
 			receiptJSON: `{
 			  	"retailer": "Target",
-			  	"purchaseDate": "2022/03/20",
+			  	"purchaseDate": "2022/03/01",
 			  	"purchaseTime": "13",
 			  	"items": [
 			    	{
@@ -125,15 +148,73 @@ func TestProcessReceiptsAndRetrievePoints(t *testing.T) {
 			  	],
 			  	"total": "34.01"
 			}`,
-			expectedPoints: 14,
+			wantStatus: http.StatusBadRequest,
+		}, {
+			name: "Test invaild retailer",
+			receiptJSON: `{
+			  	"retailer": " ",
+			  	"purchaseDate": "2022/03/01",
+			  	"purchaseTime": "13:00",
+			  	"items": [
+			    	{
+			      		"shortDescription": "Mountain Dew 12PK  ",
+			      		"price": "6.49"
+			    	},{
+			      		"shortDescription": " Emils Cheese Pizza ",
+			      		"price": "12.25"
+			    	},{
+			      		"shortDescription": "   Knorr Creamy Chicken ",
+			      		"price": "1.26"
+			    	}
+			  	],
+			  	"total": "20.00"
+			}`,
+			expectedPoints: 83,
 		},
 		// Add more test cases here
+	}
 
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			resp, err := http.Post("http://localhost:8080/receipts/process", "application/json", strings.NewReader(test.receiptJSON))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusBadRequest {
+				t.Errorf("Expected status code %d, but got %d", http.StatusOK, resp.StatusCode)
+			} else if resp.StatusCode == http.StatusBadRequest {
+				t.Log("Please present a valid receipt.")
+			}
+
+			var responseBody map[string]string
+			err = json.NewDecoder(resp.Body).Decode(&responseBody)
+
+			receiptID := responseBody["id"]
+
+			// Send a GET request to GetPoints endpoint with the generated receipt ID
+			resp, err = http.Get("http://localhost:8080/receipts/" + receiptID + "/points")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
+
+			var pointsResponse map[string]int
+			err = json.NewDecoder(resp.Body).Decode(&pointsResponse)
+
+			if pointsResponse["points"] == test.expectedPoints {
+				t.Log("Test passed!")
+			} else {
+				t.Errorf("Expected points %d, but got %d", test.expectedPoints, pointsResponse["points"])
+			}
+		})
 	}
 }
 
 func TestProcessReceipts_InvalidJSON(t *testing.T) {
-	invalidJSON := `{ "invalid": "json" }`
+	// Create a request with invalid JSON payload
+	invalidJSON := `{ "invalid": json ]`
 	resp, err := http.Post("http://localhost:8080/receipts/process", "application/json", strings.NewReader(invalidJSON))
 	if err != nil {
 		t.Fatal(err)
@@ -148,8 +229,8 @@ func TestProcessReceipts_InvalidJSON(t *testing.T) {
 
 func TestGetPoints_InvalidID(t *testing.T) {
 	// Create a request with invalid ID
-	invalidId := "id" // Corrected the variable name
-	resp, err := http.Get("http://localhost:8080/receipts/" + invalidId + "/points")
+	invaildId := "id"
+	resp, err := http.Get("http://localhost:8080/receipts/" + invaildId + "/points")
 	if err != nil {
 		t.Fatal(err)
 	}
