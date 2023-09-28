@@ -2,12 +2,10 @@
 
  This processor reads the retail and purchase information from receipts and generate unique ID for each receipt and calculate reward points for each receipt.
 
- I have included a few valid examples as well as some edge cases to test the processor's functionality.
+ I have included a few valid examples as well as some edge cases in the _main_test.go_ to test the processor's functionality.
 
 ## Environment Setup and Application Run
 This project is written in Go. To run this project, you need to have Go installed and set up on your local machine or IDE (I used IntelliJ). 
-
-In your local IDE, search for the "Go" plugin and install it.
 
 On the GitHub website, you can either download or clone the project and open up in your local IDE.
 
@@ -20,8 +18,7 @@ Once the Go is installed and project is downloaded/cloned, follow these steps to
    ``` bash
    go mod init your_project_name
    ```
-      This command initializes a go.mod file to manage your project's dependencies.
-
+      
 3. **Install Dependencies**: Use the following command to download and install the project's dependencies:
    ``` bash
    go mod tidy

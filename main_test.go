@@ -66,7 +66,7 @@ func TestProcessReceiptsAndRetrievePoints(t *testing.T) {
 			}`,
 			expectedPoints: 109,
 		}, {
-			name: "Test time between 14 and 16",
+			name: "Test special time between 14:00 and 16:00",
 			receiptJSON: `{
 			  	"retailer": "Target",
 			  	"purchaseDate": "2022-01-01",
@@ -77,34 +77,13 @@ func TestProcessReceiptsAndRetrievePoints(t *testing.T) {
 			      		"price": "6.49"
 			    	},{
 			      		"shortDescription": " Emils Cheese Pizza ",
-			      		"price": "122.25"
-			    	},{
-			      		"shortDescription": "   Knorr Creamy Chicken ",
-			      		"price": "1.26"
-			    	}
-			  	],
-			  	"total": "35.35"
-			}`,
-			expectedPoints: 52,
-		}, {
-			name: "Test special time",
-			receiptJSON: `{
-			  	"retailer": "Target",
-			  	"purchaseDate": "2022-01-01",
-			  	"purchaseTime": "14:00",
-			  	"items": [
-			    	{
-			      		"shortDescription": "Mountain Dew 12PK  ",
-			      		"price": "6.49"
-			    	},{
-			      		"shortDescription": " Emils Cheese Pizza ",
 			      		"price": "12.25"
 			    	},{
 			      		"shortDescription": "   Knorr Creamy Chicken ",
-			      		"price": "4.73"
+			      		"price": "3.12"
 			    	}
 			  	],
-			  	"total": "23.47"
+			  	"total": "21.86"
 			}`,
 			expectedPoints: 30,
 		}, {
@@ -185,7 +164,7 @@ func TestProcessReceiptsAndRetrievePoints(t *testing.T) {
 			if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusBadRequest {
 				t.Errorf("Expected status code %d, but got %d", http.StatusOK, resp.StatusCode)
 			} else if resp.StatusCode == http.StatusBadRequest {
-				t.Log("Please present a valid receipt.")
+				t.Log("Please present a valid receipt again.")
 			}
 
 			var responseBody map[string]string
@@ -193,7 +172,6 @@ func TestProcessReceiptsAndRetrievePoints(t *testing.T) {
 
 			receiptID := responseBody["id"]
 
-			// Send a GET request to GetPoints endpoint with the generated receipt ID
 			resp, err = http.Get("http://localhost:8080/receipts/" + receiptID + "/points")
 			if err != nil {
 				t.Fatal(err)

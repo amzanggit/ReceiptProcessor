@@ -85,26 +85,26 @@ func GetPoints(w http.ResponseWriter, r *http.Request) {
 func CalculatePoints(receipt *Receipt) int {
 	points := 0
 
-	// Rule 1: One point for every alphanumeric character in the retailer name.
+	// One point for every alphanumeric character in the retailer name.
 	re := regexp.MustCompile("[^a-zA-Z0-9]+")
 	points += len(re.ReplaceAllString(receipt.Retailer, ""))
 
-	// Rule 2: 50 points if the total is a round dollar amount with no cents.
+	// 50 points if the total is a round dollar amount with no cents.
 	totalFloat, _ := strconv.ParseFloat(receipt.Total, 64)
 	fractionalPart := totalFloat - float64(int(totalFloat))
 	if fractionalPart == 0.0 {
 		points += 50
 	}
 
-	// Rule 3: 25 points if the total is a multiple of 0.25.
+	// 25 points if the total is a multiple of 0.25.
 	if math.Mod(totalFloat, 0.25) == 0 {
 		points += 25
 	}
 
-	// Rule 4: 5 points for every two items on the receipt.
+	// 5 points for every two items on the receipt.
 	points += (len(receipt.Items) / 2) * 5
 
-	// Rule 5: Points based on trimmed item description length
+	// Points based on trimmed length of item description
 	for _, item := range receipt.Items {
 		if len(strings.TrimSpace(item.ShortDescription))%3 == 0 {
 			priceFloat, _ := strconv.ParseFloat(item.Price, 64)
@@ -112,13 +112,13 @@ func CalculatePoints(receipt *Receipt) int {
 		}
 	}
 
-	// Rule 6: 6 points if the day in the purchase date is odd.
+	// 6 points if the day in the purchase date is odd.
 	purchaseDate, err := time.Parse("2006-01-02", receipt.PurchaseDate)
 	if err == nil && purchaseDate.Day()%2 == 1 {
 		points += 6
 	}
 
-	// Rule 7: 10 points if the time of purchase is after 2:00pm and before 4:00pm.
+	// 10 points if the time of purchase is after 2:00pm and before 4:00pm.
 	purchaseTime, err := time.Parse("15:04", receipt.PurchaseTime)
 	start, _ := time.Parse("15:04", "13:59")
 	end, _ := time.Parse("15:04", "16:01")
